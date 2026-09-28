@@ -1,0 +1,24 @@
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: system-ui, sans-serif; color: #0f172a; }
+.app { position: relative; height: 100%; }
+.map, .leaflet-container { height: 100%; width: 100%; }
+.msg { display: grid; place-items: center; height: 100%; }
+
+.panel { position: absolute; z-index: 1000; top: 12px; left: 12px; width: 330px;
+  max-height: calc(100% - 24px); overflow: auto; box-sizing: border-box;
+  background: #fff; border-radius: 12px; padding: 14px; font-size: 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25); }
+.panel h1 { font-size: 18px; margin: 0 0 4px; }
+.panel label { display: block; margin: 10px 0; }
+.panel label.row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.panel select, .panel input[type=range], .panel button { width: 100%; margin-top: 4px; }
+.panel button { padding: 8px; border: 0; border-radius: 8px; background: #0f172a; color: #fff; cursor: pointer; }
+.hint { color: #475569; font-size: 12px; } .warn { color: #b45309; font-size: 12px; }
+.legend { display: flex; align-items: center; gap: 6px; font-size: 11px; margin: 10px 0; }
+.legend i { flex: 1; height: 8px; border-radius: 4px; background: linear-gradient(90deg, hsl(120,85%,45%), hsl(60,85%,45%), hsl(0,85%,45%)); }
+.card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; margin-top: 8px; }
+.card.active { border-color: #2563eb; background: #eff6ff; }
+.card h3 { margin: 0 0 4px; font-size: 13px; }
+.card table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.card td:first-child { color: #64748b; padding-right: 8px; }
+@media (max-width: 640px) { .panel { width: auto; right: 12px; max-height: 45%; } }
