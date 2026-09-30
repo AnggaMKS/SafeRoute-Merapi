@@ -14,7 +14,7 @@ const ENDPOINTS = [
   'https://overpass.private.coffee/api/interpreter',
   'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
 ];
-const UA = 'JalurAmanMerapi/1.0 (student project; contact: your-email@example.com)';
+const UA = 'SafeRouteMerapi/1.0';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function fetchOverpass(query) {
@@ -75,7 +75,6 @@ for (let r = 0; r < ROWS; r++) {
 }
 const data = { elements: [...merged.values()] };
 
-//buat graoh e
 const coords = new Map(), ways = [];
 for (const el of data.elements) {
   if (el.type === 'node') coords.set(el.id, [el.lat, el.lon]);
@@ -83,7 +82,7 @@ for (const el of data.elements) {
 }
 console.log(`ways: ${ways.length}, nodes: ${coords.size}`);
 
-// Undirected graph 
+// Build the undirected graph: nodes get sequential ids; each consecutive way-node pair becomes an edge.
 const idMap = new Map(), nodes = [];
 const getId = (osm) => {
   let i = idMap.get(osm);

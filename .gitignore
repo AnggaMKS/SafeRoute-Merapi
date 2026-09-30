@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 node_modules/
 
+# Local tooling / generated cache
+.commandcode/
+scripts/cache/
+

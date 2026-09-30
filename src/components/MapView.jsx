@@ -1,15 +1,16 @@
 import { useEffect } from 'react';
 import L from 'leaflet';
-import { MapContainer, TileLayer, CircleMarker, Circle, Polyline, Tooltip, ZoomControl, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Circle, Polygon, Polyline, Tooltip, ZoomControl, useMap, useMapEvents } from 'react-leaflet';
 import { SHELTERS, SUMMIT } from '../data/shelters.js';
 import { densityColor } from '../lib/density.js';
+import { ellipsePath } from '../lib/hazard.js';
 
 function ClickHandler({ onPick }) {
   useMapEvents({ click: (e) => onPick(e.latlng) });
   return null;
 }
 
-// Road density hanya untuk jalan raya
+// Density overlay is drawn for main roads only.
 function DensityLayer({ graph, density }) {
   const map = useMap();
   useEffect(() => {
@@ -71,7 +72,7 @@ export default function MapView({ graph, density, hotspots, start, route, order,
       maxBounds={[[-7.85, 110.2], [-7.45, 110.65]]} className="map">
       <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution="&copy; OpenStreetMap contributors" maxZoom={19} />
-      <ZoomControl position="bottomright" />
+      <ZoomControl position="topright" />
       <ClickHandler onPick={onPick} />
 
       {showDensity && <DensityLayer graph={graph} density={density} />}
@@ -81,7 +82,7 @@ export default function MapView({ graph, density, hotspots, start, route, order,
       ))}
       {order && <ExploredLayer graph={graph} order={order} />}
 
-      {hazard && <Circle center={[SUMMIT.lat, SUMMIT.lng]} radius={hazard.radius} interactive={false}
+      {hazard && <Polygon positions={ellipsePath(hazard)} interactive={false}
         pathOptions={{ color: '#dc2626', fillColor: '#dc2626', fillOpacity: 0.15, dashArray: '6 6' }} />}
       <CircleMarker center={[SUMMIT.lat, SUMMIT.lng]} radius={9}
         pathOptions={{ color: '#7f1d1d', fillColor: '#dc2626', fillOpacity: 1 }}>

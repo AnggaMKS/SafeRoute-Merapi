@@ -31,7 +31,8 @@ export function search(g, costs, density, start, goalNodes, algo = 'astar') {
   const heap = new MinHeap();
 
   dist[start] = 0;
-  heap.push(h(start), start);
+  const hStart = h(start); // heuristic estimate at the start (0 for UCS)
+  heap.push(hStart, start);
   let goal = -1;
 
   while (heap.size) {
@@ -52,7 +53,7 @@ export function search(g, costs, density, start, goalNodes, algo = 'astar') {
   }
 
   const ms = performance.now() - t0;
-  if (goal < 0) return { algo, found: false, expanded: order.length, ms, order };
+  if (goal < 0) return { algo, found: false, expanded: order.length, ms, order, hStart };
 
   const path = [], edges = [];
   for (let n = goal; n !== -1; n = prev[n]) {
@@ -69,6 +70,6 @@ export function search(g, costs, density, start, goalNodes, algo = 'astar') {
   return {
     algo, found: true, goal, shelterIndex: goalIndex.get(goal),
     path, edges, cost: dist[goal], distance, eta,
-    expanded: order.length, ms, order,
+    expanded: order.length, ms, order, hStart,
   };
 }

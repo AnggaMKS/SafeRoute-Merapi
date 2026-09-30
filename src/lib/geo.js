@@ -1,4 +1,5 @@
 const R = 6371008.8;
+export const M_PER_DEG = (Math.PI / 180) * R; // metres per degree (lat, and lng at the equator)
 const rad = (d) => (d * Math.PI) / 180;
 
 export function haversine(lat1, lng1, lat2, lng2) {

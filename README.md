@@ -1,5 +1,5 @@
 # SafeRoute Merapi
-- Project by: Jundi Erlangga Luhur Prawira (25/561570/TK/63456) | isi faz
+- Project by: Jundi Erlangga Luhur Prawira (25/561570/TK/63456) | Muhammad Fazli (25/560578/TK/63319)
 - Course: Artificial Intelligence, Semester 3.
 
 **Pencarian Rute Evakuasi Tercepat dan Cost-Effective ke Barak Pengungsian di Kabupaten Sleman Menggunakan Uniform-Cost Search dan A\* pada Jaringan Jalan OpenStreetMap**
@@ -19,7 +19,7 @@ A web application that simulates a Mount Merapi eruption evacuation. The user cl
 7. [Available scripts](#7-available-scripts)
 8. [How to use the app](#8-how-to-use-the-app)
 9. [Data sources & shelters](#9-data-sources--shelters)
-10. [Troubleshooting](#11-troubleshooting)
+10. [Troubleshooting](#10-troubleshooting)
 
 ---
 
@@ -39,20 +39,22 @@ Everything runs **in the browser**. There is no backend. The road network is pre
 ## 2. Features
 
 -  **Interactive map** (Leaflet + OpenStreetMap tiles) centred on Merapi / Sleman.
+-  **Responsive layout:** the side panel docks left on desktop and turns into a bottom sheet on phones, with touch-friendly controls, dynamic viewport sizing, and a **toggle to collapse/expand the panel** (× closes it, the ☰ button reopens it).
 -  **Click to set your position.** Click again to move it. The position snaps to the nearest road node.
 -  **12 evacuation shelters** (barak) shown as green markers. The chosen target is highlighted.
--  **Random crowd density** on every road segment:
-  - seeded pseudo-random generator (same seed gives the same traffic),
-  - main roads are busier than small roads,
-  - spatial **hotspots** so congestion is clustered like in real life,
-  - a **"Acak ulang kepadatan"** button generates a new scenario.
+-  **Crowd-density model** on every road segment:
+  - a base load by road class (main roads are busier than small roads),
+  - a directional **evacuation-flow** term (roads aligned with the escape direction away from the summit carry more traffic),
+  - **hotspots anchored at real population centres** (15 villages around Merapi) so congestion clusters where people actually live and evacuate to,
+  - a small seeded noise term so a **"Acak ulang kepadatan"** button still varies the micro-scenario.
 -  **Density overlay** on main roads, from green (smooth) to red (jammed).
 -  **Adjustable density weight (α)** to control how much crowding matters against distance.
--  **Eruption simulation.** Roads inside an adjustable hazard radius around the summit get an extra penalty.
+-  **Eruption simulation (road closure).** Roads inside a directional hazard zone (an ellipse elongated along the Kali Gendol corridor, south-southeast) are treated as effectively closed, so routes detour around them. The activity level (BPPTKG Waspada/Siaga/Awas) sets the zone's reach.
 -  **Switch between UCS and A\*.** Both are always computed, so their results appear side by side.
 -  **Explored-node visualization** to see how many nodes each algorithm expanded (UCS looks like a large disc, A\* like a narrow cone).
 -  **Route statistics:** target shelter, distance, ETA, effective cost, nodes expanded, computation time.
 -  **Built-in correctness check:** the UI confirms that UCS and A\* return the same cost and shows how many times fewer nodes A\* expanded.
+-  **Explanation panel (transparency):** an in-app table that shows the **cost decomposition side by side for A\* and UCS** (length + density term + hazard term = effective cost — identical for both, since both are optimal), a **worked example** of the per-segment formula (`L × (1 + α·k + penutupan)`) on real segments plus **g / h / f** at a few nodes, the **priority key** and **h(start)** of each algorithm, how **nodes explored** are counted, the **eruption effect** (level → radius → closure, route before/after), and a map **colour legend** — so a non-programmer can follow the model.
 -  **Benchmark script** that runs 200 random start points and reports average nodes expanded and time per algorithm.
 
 ---
@@ -75,12 +77,13 @@ One-way restrictions are intentionally ignored (the graph is undirected), since 
 For a road segment `e` with length `L` (metres) and crowd density `k ∈ [0, 1]`:
 
 ```
-cost(e) = L × (1 + α · k)                      normal
-cost(e) = L × (1 + α · k + hazardPenalty)      if inside the eruption hazard radius
+cost(e) = L × (1 + α · k)                              normal
+cost(e) = L × (1 + α · k + closure(d))                 when the eruption simulation is on
 ```
 
 - `α` (default `3`): a completely jammed road (`k = 1`) costs 4× as much as a free road.
-- `hazardPenalty` (default `4`): applied only when the eruption simulation is on.
+- `closure(d)` models roads **effectively closed** by the eruption. The hazard zone is an ellipse centred on the summit and elongated along the eruption corridor (Kali Gendol, bearing ≈165°, aspect 0.6). At a point whose normalised elliptical distance from the summit is `d`, the extra multiplier is `closure × max(0, 1 − d)`: near-closure (default `60`) at the summit, decaying linearly to `0` at the boundary. The activity level (BPPTKG Waspada/Siaga/Awas) sets the ellipse's major radius (3 / 5 / 10 km).
+- The **graded** decay means the zone is not a hard wall: a route can still escape from inside it, but crossing it is so costly that the search detours around it. Because the extra cost is always `≥ 0`, the multiplier stays `≥ 1` and the A\* heuristic remains admissible.
 
 The cost is **effective distance** ("km-equivalent"), not time.
 
@@ -120,7 +123,7 @@ Both algorithms must therefore return the **same optimal cost**, and A\* should 
 - **Heuristic cache** so each `h(n)` is computed at most once per search.
 - **Estimated travel time (ETA)** is computed per segment: `time = length / (freeFlowSpeed × (1 − 0.75·k))`, with free-flow speeds of 50 / 40 / 30 / 25 km/h for road classes 0 / 1 / 2 / 3 (primary, secondary, tertiary, other).
 
-### 3.4 Complexity
+### 3.7 Complexity
 
 With `V` nodes and `E` edges, both algorithms run in `O((V + E) log V)` in the worst case. A\* usually explores a much smaller portion of the graph in practice.
 
@@ -134,7 +137,7 @@ With `V` nodes and `E` edges, both algorithms run in `O((V + E) log V)` in the w
 | Map | [Leaflet](https://leafletjs.com) + [react-leaflet](https://react-leaflet.js.org) |
 | Road data | [OpenStreetMap](https://www.openstreetmap.org) via the [Overpass API](https://overpass-api.de) |
 | Search algorithms | Own implementation (no pathfinding library) |
-| Crowd density | Seeded pseudo-random generator (Mulberry32) with spatial hotspots |
+| Crowd density | Constructed model: road-class base + directional evacuation flow + village-anchored hotspots (seeded Mulberry32 noise) |
 | Hosting | Vercel or GitHub Pages (static files only) |
 
 ---
@@ -155,12 +158,14 @@ SafeRoute-Merapi/
 │   ├── App.jsx                 # state + wiring: loads graph, generates costs, runs searches
 │   ├── index.css               # styles
 │   ├── data/
-│   │   └── shelters.js         # shelter coordinates + Merapi summit coordinate
+│   │   ├── shelters.js         # shelter coordinates + Merapi summit coordinate
+│   │   └── population.js       # population-centre coordinates + relative weights
 │   ├── lib/
-│   │   ├── geo.js              # haversine distance
+│   │   ├── geo.js              # haversine distance + metres-per-degree
 │   │   ├── heap.js             # binary min-heap (priority queue)
 │   │   ├── graph.js            # graph builder (CSR) + nearest-node lookup
-│   │   ├── density.js          # random crowd density, hotspots, edge cost builder
+│   │   ├── density.js          # crowd-density model + edge cost builder
+│   │   ├── hazard.js           # directional (elliptical) hazard + BPPTKG levels
 │   │   └── search.js           # UCS and A* implementation
 │   └── components/
 │       ├── MapView.jsx         # Leaflet map, layers, markers, route drawing
@@ -247,10 +252,10 @@ The benchmark prints the average nodes expanded and average time per algorithm, 
 3. Use the **side panel** to:
    - switch between **A\*** and **UCS**,
    - change the **density weight α**,
-   - enable the **eruption simulation** and adjust the hazard radius,
+   - enable the **eruption simulation** and pick the **activity level** (Waspada/Siaga/Awas) — roads inside the zone are then treated as closed,
    - show or hide the **density overlay** and **explored nodes**,
    - press **Acak ulang kepadatan** to generate a new random traffic scenario.
-4. Read the result cards to compare **A\*** and **UCS**: distance, ETA, effective cost, nodes explored, and computation time.
+4. Read the result cards and the **Rincian biaya rute: A\* vs UCS** table: they compare distance, ETA, effective cost, nodes explored, and computation time. The table shows the effective cost is identical for both (both are optimal); the rows that actually differ (nodes explored, time) are emphasised. The **Arti warna peta** section explains the map layers.
 
 If the panel warns that your position is far from the nearest road, click closer to a road.
 
@@ -265,31 +270,31 @@ If the panel warns that your position is far from the nearest road, click closer
 | # | Name | Latitude | Longitude |
 |---|---|---|---|
 | 1 | Barak Evakuasi Akhir Girikerto | -7.62220 | 110.39034 |
-| 2 | Barak #2 *(name to be filled)* | -7.64499 | 110.39292 |
-| 3 | Barak Pengungsian Purwobinangun | -7.64891 | 110.40047 |
+| 2 | Barak Pengungsian Purwobinangun | -7.64499 | 110.39292 |
+| 3 | Barak Pengungsian Candibinangun | -7.64891 | 110.40047 |
 | 4 | Barak Plosokerep (Kambing) | -7.62669 | 110.44385 |
 | 5 | Barak Glagaharjo | -7.64678 | 110.46850 |
 | 6 | Barak Gayam | -7.65862 | 110.46863 |
 | 7 | Barak Merapi Kiyaran | -7.65691 | 110.44633 |
 | 8 | Barak Pengungsian Kiyaran | -7.65638 | 110.43877 |
-| 9 | Barak #9 *(name to be filled)* | -7.67880 | 110.45123 |
+| 9 | Barak Pengungsian Argomulyo | -7.67880 | 110.45123 |
 | 10 | Barak Pengungsian Umbulmartani | -7.68016 | 110.43406 |
-| 11 | Barak #11 *(name to be filled)* | -7.69411 | 110.48316 |
+| 11 | Barak Pengungsian Sindumartani | -7.69411 | 110.48316 |
 | 12 | Barak Tirtomartani | -7.73883 | 110.46774 |
 
 Each shelter is snapped to the nearest road node in the graph. Please verify the coordinates on Google Maps / OSM.
 
-**Crowd density:** generated randomly in the browser (see `src/lib/density.js`). It is **not** real traffic data.
+**Crowd density:** a constructed model (see `src/lib/density.js`), not real traffic data. It combines a road-class base load, a directional evacuation-flow term, and congestion hotspots anchored at 15 real villages (`src/data/population.js`, coordinates from OpenStreetMap). Relative population weights are approximate and should be checked against BPS data before citing.
 
 ---
 
-## 11. Troubleshooting
+## 10. Troubleshooting
 
 | Problem | Solution |
 |---|---|
 | App shows *"Gagal memuat graf"* | `public/data/graph.json` is missing. Run `npm run graph`. |
 | `npm run bench` fails with `ENOENT ... graph.json` | Same as above. Generate the graph first. |
-| `npm run graph` fails with `406 Not Acceptable` | The Overpass server rejects requests without a proper `User-Agent`. Make sure the `UA` line in `scripts/build-graph.mjs` is set (with your email). |
+| `npm run graph` fails with `406 Not Acceptable` | The Overpass server rejects requests without a proper `User-Agent`. Make sure the `UA` line in `scripts/build-graph.mjs` is set. |
 | `504`, `429`, or `Dispatcher_Client::...timeout` | The public Overpass servers are busy. Wait a few minutes and run `npm run graph` again. Finished tiles are cached and skipped. |
 | `fetch failed`, `ENOTFOUND`, `ETIMEDOUT` | Network problem. Check your connection or DNS, or try a different network / VPN. |
 | `HIGHWAYS is not defined` or similar | `scripts/build-graph.mjs` was edited partially. Restore the complete file from the repo. |

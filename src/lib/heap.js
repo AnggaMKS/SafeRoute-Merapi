@@ -1,3 +1,4 @@
+// Binary min-heap over (key, value) pairs, used as the search priority queue.
 export class MinHeap {
   constructor() { this.k = []; this.v = []; }
   get size() { return this.k.length; }

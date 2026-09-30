@@ -1,3 +1,4 @@
+// Build a CSR (compressed sparse row) adjacency from the raw edge list.
 export function createGraph(raw) {
   const n = raw.lat.length, m = raw.eu.length;
   const off = new Uint32Array(n + 1);
@@ -19,6 +20,7 @@ export function createGraph(raw) {
   };
 }
 
+// Nearest graph node to (lat, lng) by squared distance (linear scan, O(n)).
 export function nearestNode(g, lat, lng) {
   const k = Math.cos((lat * Math.PI) / 180);
   let best = -1, bd = Infinity;
