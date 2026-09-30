@@ -6,6 +6,8 @@
 
 A web application that simulates a Mount Merapi eruption evacuation. The user clicks a position on the map, and the system finds and draws the cheapest route to the nearest evacuation shelter (*barak pengungsian*), taking into account both **road length** and **road crowdedness** (*kepadatan*).
 
+**Live demo:** <https://saferoute-merapi.vercel.app/>
+
 ---
 
 ## Table of Contents
@@ -110,11 +112,11 @@ h(n) = haversine distance from n to the NEAREST shelter (straight line, in metre
 
 **Why A\* stays optimal (admissible & consistent heuristic):**
 
-1. The multiplier `(1 + α·k [+ penalty])` is always `≥ 1`, so `cost(e) ≥ length(e)`.
+1. The multiplier `(1 + α·k [+ closure(d)])` is always `≥ 1`, so `cost(e) ≥ length(e)`.
 2. Road length is always `≥` the straight-line distance between its endpoints.
 3. Therefore `h` never overestimates the true remaining cost. Edge lengths are also rounded **up** (`ceil`) during preprocessing so this holds numerically.
 
-Both algorithms must therefore return the **same optimal cost**, and A\* should expand far fewer nodes. That comparison is the main experimental result.
+Both algorithms must therefore return the **same optimal cost**, and A\* should expand fewer nodes (≈1.4× fewer on the 200-point benchmark). That comparison is the main experimental result.
 
 ### 3.6 Implementation details
 
@@ -138,7 +140,7 @@ With `V` nodes and `E` edges, both algorithms run in `O((V + E) log V)` in the w
 | Road data | [OpenStreetMap](https://www.openstreetmap.org) via the [Overpass API](https://overpass-api.de) |
 | Search algorithms | Own implementation (no pathfinding library) |
 | Crowd density | Constructed model: road-class base + directional evacuation flow + village-anchored hotspots (seeded Mulberry32 noise) |
-| Hosting | Vercel or GitHub Pages (static files only) |
+| Hosting | [Vercel](https://saferoute-merapi.vercel.app/) (static files only) |
 
 ---
 
@@ -189,7 +191,7 @@ SafeRoute-Merapi/
 ### Step 1: Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/SafeRoute-Merapi.git
+git clone https://github.com/AnggaMKS/SafeRoute-Merapi.git
 cd SafeRoute-Merapi
 ```
 
@@ -265,7 +267,7 @@ If the panel warns that your position is far from the nearest road, click closer
 
 **Road network:** © OpenStreetMap contributors (ODbL). Roads of type `motorway`, `trunk`, `primary`, `secondary`, `tertiary`, `unclassified`, `residential`, `living_street` (and `_link` variants) within the bounding box `-7.76, 110.34` to `-7.52, 110.52`. Only the largest connected component is kept.
 
-**Shelters** (coordinates collected from Google Maps, defined in `src/data/shelters.js`):
+**Shelters** (initial coordinates collected from Google Maps; names/kelurahan verified via Nominatim, defined in `src/data/shelters.js`):
 
 | # | Name | Latitude | Longitude |
 |---|---|---|---|
@@ -284,7 +286,7 @@ If the panel warns that your position is far from the nearest road, click closer
 
 Each shelter is snapped to the nearest road node in the graph. Please verify the coordinates on Google Maps / OSM.
 
-**Crowd density:** a constructed model (see `src/lib/density.js`), not real traffic data. It combines a road-class base load, a directional evacuation-flow term, and congestion hotspots anchored at 15 real villages (`src/data/population.js`, coordinates from OpenStreetMap). Relative population weights are approximate and should be checked against BPS data before citing.
+**Crowd density:** a constructed model (see `src/lib/density.js`), not real traffic data. It combines a road-class base load, a directional evacuation-flow term, and congestion hotspots anchored at 15 real villages (`src/data/population.js`, village centroids from OpenStreetMap via Nominatim). Relative population weights are approximate and should be checked against BPS data before citing.
 
 ---
 
